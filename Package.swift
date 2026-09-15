@@ -24,7 +24,10 @@ let package = Package(
     targets: [
         .target(
             name: "libbrotli",
-            publicHeadersPath: "c/include"
+            publicHeadersPath: "c/include",
+            cSettings: [
+                .unsafeFlags(["-O2"]),
+            ]
         ),
         .target(
             name: "libjxl",
@@ -51,6 +54,9 @@ let package = Package(
                 .define("HWY_DISABLED_TARGETS", to: "(HWY_AVX3|HWY_AVX3_SPR|HWY_AVX3_ZEN4|HWY_RVV|HWY_SSSE3|HWY_SVE_256)"),
                 // Upstream narrows size_t to int throughout; Xcode enables this warning for local packages.
                 .disableWarning("shorten-64-to-32"),
+                // Highway inlines its SIMD operations only when optimizing; unoptimized, an encode runs about 96× slower.
+                // Placed after Xcode's -O0 and -Os, so it applies in every configuration.
+                .unsafeFlags(["-O2"]),
             ]
         ),
         .target(

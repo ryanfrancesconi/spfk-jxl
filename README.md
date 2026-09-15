@@ -32,9 +32,10 @@ JPEG XL only where ImageIO can read it back, since the converter verifies each f
 ## Build
 
 libjxl compiles as two SwiftPM targets: `libbrotli` in C, and `libjxl` in C++17 with Highway and skcms inside it.
-The target uses one flag set, taken from libjxl's own CMake configuration, so the per-file flags CMake adds on
-x86_64 (skcms's AVX2 and AVX-512 transforms, `-O3` on the fast lossless encoder) are not applied there. Xcode builds
-the package's Release configuration with `-Os`, where libjxl's CMake build uses `-O3`.
+The target uses one flag set, taken from libjxl's own CMake configuration, so the per-file flags CMake adds are not
+applied: skcms's AVX2 and AVX-512 transforms on x86_64, and `-O3` on the fast lossless encoder. Both targets compile
+with `-O2` in every configuration through `unsafeFlags`, which Xcode places after its own `-O0` or `-Os`. libjxl
+assumes an optimizing build: unoptimized, an encode runs about 96× slower.
 
 The encoder runs on libjxl's thread runner, one worker per core. Cancelling the task running `encode` stops it at
 libjxl's next stage and throws `CancellationError`.
