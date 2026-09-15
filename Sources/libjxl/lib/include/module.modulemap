@@ -1,0 +1,5 @@
+module libjxl {
+    header "jxl/encode.h"
+    header "jxl/thread_parallel_runner.h"
+    export *
+}
