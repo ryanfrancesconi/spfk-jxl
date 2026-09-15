@@ -42,10 +42,18 @@ libjxl's next stage and throws `CancellationError`.
 
 ## Updating libjxl
 
+The vendored sources are an unmodified upstream release; the build flags live in `Package.swift`. They move to the
+newest upstream release near the end of each TorchTag release cycle: release tags only, never `main`.
+
 `scripts/vendor-libjxl.sh <checkout> <cmake-build-dir>` replaces `Sources/libjxl/` and `Sources/libbrotli/` from a
 libjxl checkout at a release tag with its submodules initialized, keeping only the headers the sources include. The
-three headers CMake generates come from the configured build directory. It records the tag and the pinned submodule
-commits in `upstream-versions.txt`. Re-read each license at the new versions before committing.
+four headers CMake generates come from the configured build directory. It records the tag and the pinned submodule
+commits in `upstream-versions.txt`.
+
+1. Run the script against a checkout of the current tag first. `git status` must stay clean; anything it reports is a
+   local change the update would erase.
+2. Run it against the new tag, and re-read each license at the new versions.
+3. Run the package's tests and a JPEG XL conversion in TorchTag before tagging.
 
 ## Dependencies
 
