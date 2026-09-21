@@ -132,6 +132,34 @@ final class JXLImageEncoderTests: BinTestCase {
         ).convert().output
     }
 
+    /// The EXIF block ImageIO writes into a JPEG holding only a capture date, as the TIFF structure after `Exif\0\0`.
+    private func captureDateEXIFBlock() throws -> Data {
+        let data = NSMutableData()
+        let destination = try #require(CGImageDestinationCreateWithData(data, UTType.jpeg.identifier as CFString, 1, nil))
+        let properties = [kCGImagePropertyExifDictionary: [kCGImagePropertyExifDateTimeOriginal: Self.captureDate]]
+
+        CGImageDestinationAddImage(destination, try songbird(), properties as CFDictionary)
+        try #require(CGImageDestinationFinalize(destination))
+
+        let bytes = [UInt8](data as Data)
+        let header: [UInt8] = [0x45, 0x78, 0x69, 0x66, 0, 0]
+        var offset = 2
+
+        while offset + 4 <= bytes.count, bytes[offset] == 0xFF, bytes[offset + 1] != 0xDA {
+            let end = offset + 2 + (Int(bytes[offset + 2]) << 8 | Int(bytes[offset + 3]))
+            let payload = offset + 4
+
+            if bytes[offset + 1] == 0xE1, end - payload > header.count, Array(bytes[payload ..< payload + header.count]) == header {
+                return Data(bytes[(payload + header.count) ..< end])
+            }
+
+            offset = end
+        }
+
+        Issue.record("No EXIF segment")
+        return Data()
+    }
+
     // MARK: - Pixels
 
     @Test func aRotatedSourceIsWrittenUprightAtItsDisplayedSize() throws {
@@ -225,5 +253,25 @@ final class JXLImageEncoderTests: BinTestCase {
         #expect(output.gps.isEmpty)
         #expect(output.keywords.isEmpty)
         #expect(output.orientation == 1)
+    }
+
+    /// Checked with no XMP packet, since ImageIO reads the capture date from either.
+    @Test func anEXIFBlockAloneIsReadBack() throws {
+        let data = try encoder().encode(ImageFileEncoderInput(image: songbird(), quality: 0.9, exif: captureDateEXIFBlock(), xmp: nil))
+        let url = bin.appending(component: "exif-only", directoryHint: .notDirectory).appendingPathExtension("jxl")
+        try data.write(to: url)
+
+        #expect(try readBack(url).exif[kCGImagePropertyExifDateTimeOriginal as String] as? String == Self.captureDate)
+    }
+
+    @Test func qualityOneIsLossless() throws {
+        let image = try songbird()
+        let data = try encoder().encode(ImageFileEncoderInput(image: image, quality: 1, exif: nil, xmp: nil))
+
+        let source = try #require(CGImageSourceCreateWithData(data as CFData, nil))
+        let decoded = try #require(CGImageSourceCreateImageAtIndex(source, 0, nil))
+        let pixels: (CGImage) throws -> Data = { try ImageFileEncoderInput(image: $0, quality: 1, exif: nil, xmp: nil).rgbaPixels(bitsPerComponent: 8).data }
+
+        #expect(try pixels(decoded) == pixels(image))
     }
 }
