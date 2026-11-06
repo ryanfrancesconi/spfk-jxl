@@ -1,28 +1,23 @@
 # spfk-jxl
 
 [![Version](https://img.shields.io/github/v/tag/ryanfrancesconi/spfk-jxl)](https://github.com/ryanfrancesconi/spfk-jxl/tags)
-[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fryanfrancesconi%2Fspfk-jxl%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/ryanfrancesconi/spfk-jxl)
-[![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fryanfrancesconi%2Fspfk-jxl%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/ryanfrancesconi/spfk-jxl)
+[![Swift](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fryanfrancesconi%2Fspfk-jxl%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/ryanfrancesconi/spfk-jxl)
+[![Platforms](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fryanfrancesconi%2Fspfk-jxl%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/ryanfrancesconi/spfk-jxl)
 
-JPEG XL output for [spfk-image](https://github.com/ryanfrancesconi/spfk-image)'s image converter.
-ImageIO reads JPEG XL but cannot write it, so this package vendors
+JPEG XL encoding for [spfk-image](https://github.com/ryanfrancesconi/spfk-image)'s image converter.
+ImageIO reads JPEG XL but cannot write it. This package vendors
 [libjxl](https://github.com/libjxl/libjxl) and its dependencies (Highway, skcms, Brotli) as source
-and supplies `JXLImageEncoder`, an encoder the converter accepts for that type. The C encoder API is
-also available directly.
+and provides `JXLImageEncoder`. The libjxl C API is also available as its own library product.
 
-`JXLImageEncoder()` is `nil` on a system that does not declare the JPEG XL type, and the converter
-offers JPEG XL only where ImageIO can read the result back, since it verifies each file it writes.
+## Features
 
-> **The root `LICENSE` (MIT) covers this packaging only — not libjxl, Highway, skcms or Brotli.**
-See > [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) for their terms and the attribution an
-embedding application owes.
+- `JXLImageEncoder`, an `ImageFileEncoder` for `public.jpeg-xl`. Its initializer returns `nil` on a
+  system that does not declare that type.
 
-## Upstream
+## License
 
-The vendored sources are an unmodified upstream release; the build flags live in `Package.swift` and
-compile libjxl optimized in every configuration, since it assumes an optimizing build.
-`scripts/vendor-libjxl.sh` replaces them from a release-tag checkout and records the tag and the
-pinned submodule commits in `upstream-versions.txt`.
+The root `LICENSE` (MIT) covers this packaging only. libjxl, Highway, skcms and Brotli are under
+their own licenses; see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
 ## About
 
