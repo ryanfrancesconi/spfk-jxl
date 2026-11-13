@@ -30,24 +30,43 @@ struct JXLImageEncoderCancellationTests {
         return image
     }
 
-    @Test func cancellingStopsTheEncodePromptly() async throws {
-        try #require(JXLImageEncoder() != nil)
+    /// Starts an encode, yielding once the input is built so the timing covers libjxl alone.
+    private static func startEncode() -> (task: Task<Data, Error>, started: AsyncStream<Void>) {
+        let (started, continuation) = AsyncStream<Void>.makeStream()
 
         let task = Task.detached {
             let input = try ImageFileEncoderInput(image: Self.noise(width: 2400, height: 1600), quality: 0.9, exif: nil, xmp: nil)
             guard let encoder = JXLImageEncoder() else { throw ImageConversionError.renderFailed }
+            continuation.yield()
+            continuation.finish()
             return try encoder.encode(input)
         }
 
-        try await Task.sleep(for: .milliseconds(500))
+        return (task, started)
+    }
 
-        let cancelled = Date()
-        task.cancel()
+    /// The bound is relative to a full encode in the same run, so machine load scales both sides.
+    @Test func cancellingStopsTheEncodePromptly() async throws {
+        try #require(JXLImageEncoder() != nil)
+
+        let full = Self.startEncode()
+        for await _ in full.started {}
+        let fullStart = ContinuousClock.now
+        _ = try await full.task.value
+        let fullDuration = ContinuousClock.now - fullStart
+
+        let cancelledRun = Self.startEncode()
+        for await _ in cancelledRun.started {}
+        try await Task.sleep(for: fullDuration / 10)
+
+        let cancelled = ContinuousClock.now
+        cancelledRun.task.cancel()
 
         await #expect(throws: CancellationError.self) {
-            _ = try await task.value
+            _ = try await cancelledRun.task.value
         }
 
-        #expect(Date().timeIntervalSince(cancelled) < 2)
+        let latency = ContinuousClock.now - cancelled
+        #expect(latency < fullDuration / 2, "cancelled after \(latency), a full encode took \(fullDuration)")
     }
 }
