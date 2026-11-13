@@ -1,6 +1,6 @@
 # Third-party notices
 
-**The `LICENSE` file at the root of this repository (MIT) covers the packaging only** — `Package.swift`,
+**The `LICENSE` file at the root of this repository (MIT) covers the packaging only** - `Package.swift`,
 `Sources/SPFKJXL/`, the tests, the script and the README. It does **not** cover `Sources/libjxl/` or
 `Sources/libbrotli/`, which are third-party code under their own terms. All four are permissive.
 
